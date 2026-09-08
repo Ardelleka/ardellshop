@@ -25,9 +25,10 @@
 
   <!-- Tombol Kategori Produk -->
   <section class="max-w-4xl mx-auto px-4 pt-4 flex gap-2 overflow-x-auto">
-    <button class="bg-white text-gray-700 hover:bg-pink-50 text-xs px-4 py-2 rounded-full font-semibold border border-gray-200 whitespace-nowrap">BRA</button>
-    <button class="bg-white text-gray-700 hover:bg-pink-50 text-xs px-4 py-2 rounded-full font-semibold border border-gray-200 whitespace-nowrap">CD</button>
-    <button class="bg-white text-gray-700 hover:bg-pink-50 text-xs px-4 py-2 rounded-full font-semibold border border-gray-200 whitespace-nowrap">BAJU TIDUR</button>
+    <button onclick="filterKategori('ALL')" id="btn-ALL" class="btn-kategori bg-pink-600 text-white text-xs px-4 py-2 rounded-full font-semibold border border-pink-600 whitespace-nowrap transition">ALL</button>
+    <button onclick="filterKategori('BRA')" id="btn-BRA" class="btn-kategori bg-white text-gray-700 hover:bg-pink-50 text-xs px-4 py-2 rounded-full font-semibold border border-gray-200 whitespace-nowrap transition">BRA</button>
+    <button onclick="filterKategori('CD')" id="btn-CD" class="btn-kategori bg-white text-gray-700 hover:bg-pink-50 text-xs px-4 py-2 rounded-full font-semibold border border-gray-200 whitespace-nowrap transition">CD</button>
+    <button onclick="filterKategori('KORSET')" id="btn-KORSET" class="btn-kategori bg-white text-gray-700 hover:bg-pink-50 text-xs px-4 py-2 rounded-full font-semibold border border-gray-200 whitespace-nowrap transition">KORSET</button>
   </section>
 
   <!-- Konten Utama Produk -->
@@ -36,50 +37,13 @@
     
     <!-- ID 'daftar-produk' ini yang diisi data dinamis dari Firebase -->
     <div id="daftar-produk" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-      
-      <!-- Kartu Contoh 1 -->
-      <div class="bg-white rounded-lg shadow border p-4 flex flex-col justify-between">
-        <div>
-          <img src="https://via.placeholder.com/300x200?text=Korset+Pelangsing" alt="Korset Pelangsing" class="w-full h-40 object-cover rounded-md mb-3">
-          <h4 class="font-bold text-gray-900">Korset Pelangsing Premium</h4>
-          <p class="text-xs text-gray-500 mb-2">Bahan elastis, menopang punggung & meratakan perut.</p>
-          <div class="text-pink-600 font-bold text-base mb-3">Rp 75.000</div>
-        </div>
-        <div class="flex flex-col gap-2 border-t pt-3 mt-2">
-          <a href="https://s.shopee.co.id/9fKXsfGcKy" target="_blank" class="block w-full bg-orange-500 hover:bg-orange-600 text-white text-center py-2 rounded-lg text-xs font-semibold transition">
-            🛒 Beli di Shopee
-          </a>
-          <a href="https://wa.me/6281555604978?text=Halo%20Ardell%20Shop,%20saya%20mau%20tanya%20Korset%20Pelangsing%20Premium" target="_blank" class="block w-full bg-green-500 hover:bg-green-600 text-white text-center py-2 rounded-lg text-xs font-semibold transition">
-            💬 Tanya Size / Order WA
-          </a>
-        </div>
-      </div>
-
-      <!-- Kartu Contoh 2 -->
-      <div class="bg-white rounded-lg shadow border p-4 flex flex-col justify-between">
-        <div>
-          <img src="https://via.placeholder.com/300x200?text=Bra+Seamless" alt="Bra Seamless" class="w-full h-40 object-cover rounded-md mb-3">
-          <h4 class="font-bold text-gray-900">Bra Seamless Katun</h4>
-          <p class="text-xs text-gray-500 mb-2">Tanpa kawat, bahan halus tidak menciplak di baju.</p>
-          <div class="text-pink-600 font-bold text-base mb-3">Rp 45.000</div>
-        </div>
-        <div class="flex flex-col gap-2 border-t pt-3 mt-2">
-          <a href="https://s.shopee.co.id/9fKXsfGcKy" target="_blank" class="block w-full bg-orange-500 hover:bg-orange-600 text-white text-center py-2 rounded-lg text-xs font-semibold transition">
-            🛒 Beli di Shopee
-          </a>
-          <a href="https://wa.me/6281555604978?text=Halo%20Ardell%20Shop,%20saya%20mau%20tanya%20Bra%20Seamless%20Katun" target="_blank" class="block w-full bg-green-500 hover:bg-green-600 text-white text-center py-2 rounded-lg text-xs font-semibold transition">
-            💬 Tanya Size / Order WA
-          </a>
-        </div>
-      </div>
-
+      <p class="text-gray-400 text-sm italic col-span-3">Memuat produk...</p>
     </div>
   </main>
 
   <!-- Footer Informasi Toko -->
   <footer class="bg-white border-t mt-12 p-6 text-gray-600 text-sm">
     <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-      
       <div>
         <h4 class="font-bold text-gray-900 mb-2">Ardell Shop</h4>
         <p class="text-xs mb-1">📍 <strong>Alamat Toko:</strong> Jl. Lawang View Selatan 3 No.6</p>
@@ -96,7 +60,6 @@
           🛒 Kunjungi Shopee Ardell Shop
         </a>
       </div>
-
     </div>
 
     <div class="border-t border-gray-100 mt-6 pt-4 text-center text-xs text-gray-400">
@@ -121,51 +84,90 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    async function muatProduk() {
-      const daftarProdukEl = document.getElementById("daftar-produk");
+    // Penampung data produk lokal
+    let semuaProduk = [];
 
+    // 1. Ambil data dari Firebase
+    async function muatProduk() {
       try {
         const querySnapshot = await getDocs(collection(db, "produk"));
-
-        if (!querySnapshot.empty) {
-          daftarProdukEl.innerHTML = "";
-        }
+        semuaProduk = [];
 
         querySnapshot.forEach((doc) => {
-          const data = doc.data();
-
-          const pesanWA = encodeURIComponent(`Halo Ardell Shop, saya mau tanya/order ${data.nama}`);
-          const linkWA = `https://wa.me/6281555604978?text=${pesanWA}`;
-          const linkShopee = data.shopeeUrl || "https://s.shopee.co.id/9fKXsfGcKy";
-          const hargaFormatted = Number(data.harga).toLocaleString("id-ID");
-
-          const kartuHtml = `
-            <div class="bg-white rounded-lg shadow border p-4 flex flex-col justify-between">
-              <div>
-                <img src="${data.gambarUrl || 'https://via.placeholder.com/300x200?text=No+Image'}" alt="${data.nama}" class="w-full h-40 object-cover rounded-md mb-3">
-                <h4 class="font-bold text-gray-900">${data.nama}</h4>
-                <p class="text-xs text-gray-500 mb-2">${data.deskripsi || ''}</p>
-                <div class="text-pink-600 font-bold text-base mb-3">Rp ${hargaFormatted}</div>
-              </div>
-              <div class="flex flex-col gap-2 border-t pt-3 mt-2">
-                <a href="${linkShopee}" target="_blank" class="block w-full bg-orange-500 hover:bg-orange-600 text-white text-center py-2 rounded-lg text-xs font-semibold transition">
-                  🛒 Beli di Shopee
-                </a>
-                <a href="${linkWA}" target="_blank" class="block w-full bg-green-500 hover:bg-green-600 text-white text-center py-2 rounded-lg text-xs font-semibold transition">
-                  💬 Tanya Size / Order WA
-                </a>
-              </div>
-            </div>
-          `;
-
-          daftarProdukEl.innerHTML += kartuHtml;
+          semuaProduk.push({ id: doc.id, ...doc.data() });
         });
+
+        // Tampilkan semua produk saat pertama dibuka
+        tampilkanProduk(semuaProduk);
 
       } catch (error) {
         console.error("Gagal mengambil data produk: ", error);
+        document.getElementById("daftar-produk").innerHTML = `<p class="text-red-500 text-sm col-span-3">Gagal memuat produk. Silakan coba lagi.</p>`;
       }
     }
 
+    // 2. Tampilkan HTML Kartu Produk
+    window.tampilkanProduk = function(daftar) {
+      const daftarProdukEl = document.getElementById("daftar-produk");
+      daftarProdukEl.innerHTML = "";
+
+      if (daftar.length === 0) {
+        daftarProdukEl.innerHTML = `<p class="text-gray-500 text-sm col-span-3 text-center py-8">Belum ada produk untuk kategori ini.</p>`;
+        return;
+      }
+
+      daftar.forEach((data) => {
+        const pesanWA = encodeURIComponent(`Halo Ardell Shop, saya mau tanya/order ${data.nama}`);
+        const linkWA = `https://wa.me/6281555604978?text=${pesanWA}`;
+        const linkShopee = data.shopeeUrl || "https://s.shopee.co.id/9fKXsfGcKy";
+        const hargaFormatted = Number(data.harga || 0).toLocaleString("id-ID");
+
+        const kartuHtml = `
+          <div class="bg-white rounded-lg shadow border p-4 flex flex-col justify-between">
+            <div>
+              <img src="${data.gambarUrl || 'https://via.placeholder.com/300x200?text=No+Image'}" alt="${data.nama}" class="w-full h-40 object-cover rounded-md mb-3">
+              <h4 class="font-bold text-gray-900">${data.nama}</h4>
+              <p class="text-xs text-gray-500 mb-2">${data.deskripsi || ''}</p>
+              <div class="text-pink-600 font-bold text-base mb-3">Rp ${hargaFormatted}</div>
+            </div>
+            <div class="flex flex-col gap-2 border-t pt-3 mt-2">
+              <a href="${linkShopee}" target="_blank" class="block w-full bg-orange-500 hover:bg-orange-600 text-white text-center py-2 rounded-lg text-xs font-semibold transition">
+                🛒 Beli di Shopee
+              </a>
+              <a href="${linkWA}" target="_blank" class="block w-full bg-green-500 hover:bg-green-600 text-white text-center py-2 rounded-lg text-xs font-semibold transition">
+                💬 Tanya Size / Order WA
+              </a>
+            </div>
+          </div>
+        `;
+
+        daftarProdukEl.innerHTML += kartuHtml;
+      });
+    };
+
+    // 3. Logika Filter Kategori & Indikator Warna Tombol
+    window.filterKategori = function(kategori) {
+      // Reset semua warna tombol
+      document.querySelectorAll('.btn-kategori').forEach(btn => {
+        btn.className = "btn-kategori bg-white text-gray-700 hover:bg-pink-50 text-xs px-4 py-2 rounded-full font-semibold border border-gray-200 whitespace-nowrap transition";
+      });
+
+      // Highlight tombol aktif dengan warna pink
+      const btnAktif = document.getElementById(`btn-${kategori}`);
+      if (btnAktif) {
+        btnAktif.className = "btn-kategori bg-pink-600 text-white text-xs px-4 py-2 rounded-full font-semibold border border-pink-600 whitespace-nowrap transition";
+      }
+
+      // Filter array data
+      if (kategori === 'ALL') {
+        tampilkanProduk(semuaProduk);
+      } else {
+        const hasilFilter = semuaProduk.filter(item => item.kategori === kategori);
+        tampilkanProduk(hasilFilter);
+      }
+    };
+
+    // Jalankan fungsi awal
     muatProduk();
   </script>
 </body>
