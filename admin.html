@@ -82,7 +82,21 @@
 
   </main>
 
-  <!-- Script Firebase Integration -->
+  //script pasword admin
+
+<script>
+
+const PASSWORD_ADMIN = "Elly1978"; 
+
+const passInput = prompt("Masukkan Password:");
+
+if (passInput !== PASSWORD_ADMIN) {
+  alert("Password salah! Anda tidak memiliki akses.");
+  window.location.href = "index.html"; // Lempar balik ke halaman depan
+}
+</script>
+
+<!-- Script Firebase Integration -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
