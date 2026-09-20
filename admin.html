@@ -6,7 +6,7 @@
   <title>Admin - Ardell Shop</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans">
+<body id="admin-body" class="bg-gray-100 text-gray-800 font-sans hidden">
 
   <!-- Header Admin -->
   <header class="bg-slate-800 text-white p-4 shadow-md">
@@ -31,7 +31,7 @@
           <input type="text" id="nama" placeholder="Contoh: Bra Seamless Katun" required class="w-full border rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500">
         </div>
 
-        <!-- Dropdown Kategori (Mudah & Mencegah Typo) -->
+        <!-- Dropdown Kategori -->
         <div>
           <label class="block text-xs font-semibold text-gray-600 mb-1">Kategori Produk *</label>
           <select id="kategori" required class="w-full border rounded p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-pink-500">
@@ -53,10 +53,10 @@
           <textarea id="deskripsi" rows="2" placeholder="Contoh: Bahan adem, tanpa kawat" class="w-full border rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"></textarea>
         </div>
 
-        <!-- URL Gambar -->
+        <!-- Upload Foto Produk dari Galeri -->
         <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Link Gambar (URL) *</label>
-          <input type="url" id="gambarUrl" placeholder="https://..." required class="w-full border rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500">
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Foto Produk (Pilih dari Galeri) *</label>
+          <input type="file" id="gambarFile" accept="image/*" required class="w-full border rounded p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-pink-500 cursor-pointer">
         </div>
 
         <!-- URL Shopee -->
@@ -82,24 +82,25 @@
 
   </main>
 
-  //script pasword admin
+  <!-- Script Password Admin -->
+  <script>
+    const PASSWORD_ADMIN = "1978"; // UBAH PASSWORD KAMU DI SINI
 
-<script>
+    const passInput = prompt("Masukkan Password Admin:");
 
-const PASSWORD_ADMIN = "Elly1978"; 
+    if (passInput !== PASSWORD_ADMIN) {
+      alert("Password salah! Anda tidak memiliki akses.");
+      window.location.href = "index.html";
+    } else {
+      document.getElementById("admin-body").classList.remove("hidden");
+    }
+  </script>
 
-const passInput = prompt("Masukkan Password:");
-
-if (passInput !== PASSWORD_ADMIN) {
-  alert("Password salah! Anda tidak memiliki akses.");
-  window.location.href = "index.html"; // Lempar balik ke halaman depan
-}
-</script>
-
-<!-- Script Firebase Integration -->
+  <!-- Script Firebase Integration & Storage -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyArnm0DSkxrWCWU_nvdwy8slXAuEiAVYOs",
@@ -112,35 +113,53 @@ if (passInput !== PASSWORD_ADMIN) {
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const storage = getStorage(app);
 
     const form = document.getElementById("form-produk");
     const daftarAdminEl = document.getElementById("daftar-admin");
 
-    // 1. Fungsi Tambah Produk ke Firebase
+    // 1. Fungsi Tambah Produk + Upload Foto ke Firebase Storage
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const btnSimpan = document.getElementById("btn-simpan");
-      btnSimpan.innerText = "Lagi Menyimpan...";
+      const fileInput = document.getElementById("gambarFile");
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert("Silakan pilih foto produk terlebih dahulu!");
+        return;
+      }
+
+      btnSimpan.innerText = "Mengunggah foto & menyimpan...";
       btnSimpan.disabled = true;
 
-      const produkBaru = {
-        nama: document.getElementById("nama").value,
-        kategori: document.getElementById("kategori").value,
-        harga: Number(document.getElementById("harga").value),
-        deskripsi: document.getElementById("deskripsi").value,
-        gambarUrl: document.getElementById("gambarUrl").value,
-        shopeeUrl: document.getElementById("shopeeUrl").value,
-        createdAt: new Date()
-      };
-
       try {
+        // A. Upload file foto ke Firebase Storage
+        const namaFileUnik = Date.now() + "_" + file.name;
+        const storageRef = ref(storage, "produk/" + namaFileUnik);
+        await uploadBytes(storageRef, file);
+
+        // B. Ambil URL foto yang berhasil di-upload
+        const gambarUrl = await getDownloadURL(storageRef);
+
+        // C. Simpan data ke Firestore Database
+        const produkBaru = {
+          nama: document.getElementById("nama").value,
+          kategori: document.getElementById("kategori").value,
+          harga: Number(document.getElementById("harga").value),
+          deskripsi: document.getElementById("deskripsi").value,
+          gambarUrl: gambarUrl,
+          shopeeUrl: document.getElementById("shopeeUrl").value,
+          createdAt: new Date()
+        };
+
         await addDoc(collection(db, "produk"), produkBaru);
         alert("Berhasil menambah produk!");
         form.reset();
         muatProdukAdmin();
       } catch (error) {
         console.error("Gagal simpan:", error);
-        alert("Gagal menyimpan produk.");
+        alert("Gagal menyimpan produk. Pastikan jaringan lancar!");
       } finally {
         btnSimpan.innerText = "+ Simpan Produk";
         btnSimpan.disabled = false;
